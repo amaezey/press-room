@@ -2,6 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Press room</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='5' width='20' height='20' fill='%2363365F'/%3E%3Crect x='10' y='9' width='20' height='20' fill='%23E55D2B' fill-opacity='.86'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:wght@600&display=swap">
@@ -16,11 +17,16 @@ body{margin:0;background:var(--sheet);color:var(--edge);
 font:400 14px/20px var(--f-sans);display:flex;flex-direction:column;overflow:hidden}
 h1,h2,h3,p{margin:0}
 
-.top{flex:none;display:flex;align-items:baseline;gap:12px;
-padding:9px 16px;border-bottom:1px solid var(--edge)}
-.top h1{font:600 20px/1 var(--f-serif);color:#63365F;letter-spacing:-.01em}
-.top h1 em{font-style:italic;font-weight:600}
-.top .readout{font:400 12px/16px var(--f-mono);color:var(--dim)}
+.top{flex:none;display:flex;align-items:center;gap:13px;height:44px;
+padding:0 16px;background:#F4F3EE;border-bottom:1px solid var(--edge)}
+.top .bar{flex:none;display:flex;box-shadow:0 0 0 1px rgba(38,37,31,.2)}
+.top .bar i{display:block;width:15px;height:15px}
+.top h1{font:600 12px/1 var(--f-mono);letter-spacing:.185em;
+text-transform:uppercase;color:var(--edge);white-space:nowrap}
+.top .readout{flex:1;min-width:0;padding-left:13px;
+border-left:1px solid var(--line);
+font:400 11px/16px var(--f-mono);letter-spacing:.02em;color:var(--dim);
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .wrap{flex:1;display:flex;min-height:0}
 .panel{width:328px;flex:none;overflow-y:auto;border-right:1px solid var(--edge);
@@ -40,40 +46,57 @@ fieldset{border:0;border-bottom:1px solid var(--line);margin:0;padding:0 0 14px}
 legend{display:block;width:100%;padding:13px 16px 8px;
 font:500 11px/15px var(--f-mono);letter-spacing:.11em;text-transform:uppercase;
 color:var(--dim)}
-.row{display:grid;grid-template-columns:84px 1fr 34px;gap:10px;align-items:center;
+.row{display:grid;grid-template-columns:84px minmax(0,1fr) 34px;gap:10px;align-items:center;
 padding:0 16px;margin-top:9px}
 .row label{font:400 13px/18px var(--f-sans);color:var(--edge)}
 .row output{font:400 12px/16px var(--f-mono);color:var(--dim);text-align:right}
-select,input[type=range]{width:100%;margin:0}
+select,input[type=range]{width:100%;min-width:0;margin:0}
 select{font:400 13px/18px var(--f-sans);height:30px;padding:0 8px;
 border:1px solid var(--line);background:#fff;color:var(--edge);border-radius:4px}
 input[type=range]{accent-color:#63365F;height:30px}
 .chk{display:flex;align-items:center;gap:9px;padding:0 16px;margin-top:10px;
 font:400 13px/18px var(--f-sans)}
 .chk input{margin:0;accent-color:#63365F}
-.row.off{opacity:.42}
-.row.off input,.row.off select{pointer-events:none}
+.off{opacity:.42}
+.off input,.off select,.off button{pointer-events:none}
+.seg{display:flex;height:30px;min-width:0;border:1px solid var(--line);
+border-radius:4px;background:#fff;overflow:hidden}
+.seg button{flex:1;min-width:0;padding:0 4px;border:0;
+border-right:1px solid var(--line);background:transparent;cursor:pointer;
+font:400 12px/16px var(--f-sans);color:var(--dim);
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg button:last-child{border-right:0}
+.seg button:not(.on):hover{background:#F4F3EE;color:var(--edge)}
+.seg button.on{background:#63365F;color:#fff}
+.file{position:relative;display:flex;align-items:center;gap:7px;height:30px;
+padding:0 9px;border:1px solid var(--line);background:#fff;border-radius:4px;
+cursor:pointer;font:400 12px/16px var(--f-mono);color:var(--dim);min-width:0}
+.file:hover{border-color:var(--edge)}
+.file:focus-within{border-color:var(--edge);box-shadow:0 0 0 2px rgba(99,54,95,.22)}
+.file input{position:absolute;inset:0;opacity:0;pointer-events:none}
+.file span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 button.act{border:1px solid var(--line);background:#fff;cursor:pointer;
 padding:0 14px;height:30px;font:400 13px/18px var(--f-sans);
 color:var(--edge);border-radius:4px}
 button.act:hover{border-color:var(--edge)}
 </style>
 
-<div class="top"><h1><em>Press</em> room</h1>
+<div class="top"><span class="bar"><i id="chip1"></i><i id="chip2"></i></span>
+<h1>Press room</h1>
 <span class="readout" id="recipe"></span></div>
 
 <div class="wrap">
   <div class="panel">
     <fieldset><legend>Source</legend>
       <div class="row"><label>Image</label>
-        <input type="file" id="file" accept="image/*"
-          style="font:400 11px/16px var(--f-mono);color:var(--dim)"><output></output></div>
+        <label class="file"><input type="file" id="file" accept="image/*">
+          <span id="filename">Choose a picture</span></label><output></output></div>
       <div class="row"><label>Ink from</label>
         <select id="flip"><option value="0">Dark areas</option>
         <option value="1">Light areas</option></select><output></output></div>
       <div class="row off" id="rowCut"><label>Cutout</label>
         <input type="range" id="cut" min="0" max="100" value="50"><output>50</output></div>
-      <div class="row"><label>Plate</label>
+      <div class="row"><label>Picture</label>
         <span id="srcnote" style="font:400 11px/16px var(--f-mono);color:var(--dim)"></span><output></output></div>
     </fieldset>
 
@@ -101,6 +124,11 @@ button.act:hover{border-color:var(--edge)}
     </fieldset>
 
     <fieldset><legend>Back face</legend>
+      <div class="row"><label>Impressions</label>
+        <div class="seg"><button type="button" data-id="one">One</button>
+        <button type="button" data-id="two">Two</button></div>
+        <input type="radio" name="np" id="one" hidden>
+        <input type="radio" name="np" id="two" checked hidden><output></output></div>
       <div class="row"><label>Ink</label>
         <select id="ink2"><option value="0">Cobalt</option><option value="1">Royal Blue</option><option value="2">Ultramarine</option><option value="3">Electric Blue</option><option value="4">Slate Blue</option><option value="5">Powder Blue</option><option value="6">Cyan</option><option value="7">Botanical Green</option><option value="8">Mint Green</option><option value="9">Terracotta</option><option value="10" selected>Safety Orange</option><option value="11">Tangerine</option><option value="12">Signal Red</option><option value="13">Brick Red</option><option value="14">Oxblood</option><option value="15">Aubergine</option><option value="16">Charcoal</option><option value="17">Warm Charcoal</option><option value="18">Carbon</option></select><output></output></div>
       <div class="row"><label>Strength</label>
@@ -117,17 +145,18 @@ button.act:hover{border-color:var(--edge)}
 
     <fieldset><legend>Reproduction</legend>
       <div class="row"><label>Process</label>
-        <select id="proc"><option value="0" selected>Crisp screening</option><option value="1">Clean plate separation</option><option value="2">Coarse halftone</option><option value="3">Risograph grain</option><option value="4">Cyanotype-like exposure</option><option value="5">Photocopy breakup</option><option value="6">Newspaper screening</option></select><output></output></div>
+        <select id="proc"><option value="0">Crisp screening</option><option value="1">Clean plate separation</option><option value="2" selected>Coarse halftone</option><option value="3">Risograph grain</option><option value="4">Cyanotype-like exposure</option><option value="5">Photocopy breakup</option><option value="6">Newspaper screening</option></select><output></output></div>
       <div class="row"><label>Screen</label>
-        <input type="range" id="cell" min="0" max="100" value="27"><output>27</output></div>
+        <input type="range" id="cell" min="0" max="100" value="64"><output>64</output></div>
       <div class="row"><label>Contrast</label>
-        <input type="range" id="con" min="0" max="100" value="25"><output>25</output></div>
+        <input type="range" id="con" min="0" max="100" value="24"><output>24</output></div>
       <div class="row"><label>Gamma</label>
         <input type="range" id="gam" min="0" max="100" value="29"><output>29</output></div>
-      <div class="chk"><input type="radio" name="meet" id="ko" value="ko" checked>
-        <label for="ko">Knockout</label>
-        <input type="radio" name="meet" id="over" value="over" style="margin-left:14px">
-        <label for="over">Overprint</label></div>
+      <div class="row" id="rowMeet"><label>Faces meet</label>
+        <div class="seg"><button type="button" data-id="ko">Knockout</button>
+        <button type="button" data-id="over">Overprint</button></div>
+        <input type="radio" name="meet" id="ko" checked hidden>
+        <input type="radio" name="meet" id="over" hidden><output></output></div>
       <div class="row"><label>Knockout</label>
         <input type="range" id="kamt" min="0" max="100" value="100"><output>100</output></div>
       <div class="chk"><input type="checkbox" id="order">
@@ -136,8 +165,9 @@ button.act:hover{border-color:var(--edge)}
 
     <fieldset><legend>Imperfections</legend>
       <div class="row"><label>Work</label>
-        <select id="work"><option value="0">Contemporary, up to 2</option>
-        <option value="1">Tactile, 2 to 3</option></select><output id="ncount"></output></div>
+        <select id="work" title="contemporary takes up to 2, tactile 2 to 3">
+        <option value="0">Contemporary</option>
+        <option value="1">Tactile</option></select><output id="ncount"></output></div>
       <div class="row"><label>Registration</label>
         <input type="range" id="reg" min="0" max="100" value="0"><output>0</output></div>
       <div class="row"><label>Ink density</label>
@@ -152,6 +182,7 @@ button.act:hover{border-color:var(--edge)}
   <div class="stage">
     <canvas id="out" width="1400" height="1400"></canvas>
     <div class="acts">
+      <button class="act" id="rand">Random</button>
       <button class="act" id="swap">Swap</button>
       <button class="act" id="reset">Reset</button>
       <button class="act" id="dl">PNG</button>
@@ -358,9 +389,11 @@ function render(){
     val('sha2')>=0? INKS[val('sha2')].hex : null,
     val('hil2')>=0? INKS[val('hil2')].hex : null, paper);
 
-  const over = el('over').checked, backOnTop = el('order').checked;
+  const two = el('two').checked;
+  const over = el('over').checked, backOnTop = two && el('order').checked;
   // last in the list is the plate that prints on top
-  const layers = backOnTop ? [[p1,c1],[p2,c2]] : [[p2,c2],[p1,c1]];
+  const layers = !two ? [[p1,c1]]
+    : (backOnTop ? [[p1,c1],[p2,c2]] : [[p2,c2],[p1,c1]]);
 
   const tmp = document.createElement('canvas'); tmp.width=N; tmp.height=N;
   const tctx = tmp.getContext('2d', {willReadFrequently:true});
@@ -397,7 +430,7 @@ function render(){
 
   // wet ink: the plate that printed second dominates where they overlap,
   // which is what makes the order visible under overprint
-  if (over) {
+  if (over && layers.length > 1) {
     const [, topCf] = layers[layers.length-1];
     const topD = layers[layers.length-1][0], botD = layers[0][0];
     const lap = new Float32Array(N*N);
@@ -416,22 +449,29 @@ function render(){
   ctx.globalCompositeOperation = 'source-over';
 
   el('mode').textContent = resolveMode();
+  el('chip1').style.background = INKS[val('ink1')].hex;
+  el('chip2').style.background = INKS[val('ink2')].hex;
+  el('chip2').hidden = !two;
   el('recipe').textContent =
-    [sub.name,
-     INKS[val('ink1')].name + ' ' + val('str1') + '%',
-     INKS[val('ink2')].name + ' ' + val('str2') + '%',
-     resolveMode(),
-     proc.name + ', screen ' + val('cell')]
+    [sub.name, INKS[val('ink1')].name + ' ' + val('str1') + '%']
+    .concat(two ? [INKS[val('ink2')].name + ' ' + val('str2') + '%'] : [])
+    .concat([resolveMode(), proc.name + ', screen ' + val('cell')])
     .concat(reg? ['registration ' + reg + 'px'] : []).join(' / ');
 }
 
 // the screen slider only bites on a screened process
 function sync(){
+  paintSegs();
+  const two = el('two').checked;
+  for (const id of ['ink2','str2','offx','offy','sha2','hil2'])
+    el(id).closest('.row').classList.toggle('off', !two);
+  el('rowMeet').classList.toggle('off', !two);
+  el('order').closest('.chk').classList.toggle('off', !two);
   const p = PROCS[val('proc')];
   const live = p.screen !== 'none';
   el('cell').closest('.row').classList.toggle('off', !live);
   el('cell').disabled = !live;
-  const ko = el('ko').checked;
+  const ko = el('ko').checked && two;
   el('kamt').closest('.row').classList.toggle('off', !ko);
   el('kamt').disabled = !ko;
 }
@@ -447,6 +487,7 @@ function inkIndex(name){
 function resolveMode(){
   const a = INKS[val('ink1')].name, b = INKS[val('ink2')].name;
   const blacks = ['Carbon','Charcoal','Warm Charcoal'];
+  if (!el('two').checked) return 'pure one-ink';
   if (a === b || val('str2') === 0) return 'pure one-ink';
   if (blacks.includes(a) || blacks.includes(b)) return 'chromatic + black';
   if (el('over').checked) return 'overprint duotone';
@@ -504,6 +545,8 @@ function bind(){
     });
   });
   sync();
+  bindSegs();
+  el('rand').onclick = randomise;
   el('swap').onclick = () => {
     const a = el('ink1').value; el('ink1').value = el('ink2').value; el('ink2').value = a;
     render();
@@ -515,13 +558,15 @@ function bind(){
     el('str1').value=100; el('str2').value=100;
     el('offx').value=138; el('offy').value=25;
     el('sha1').value=-1; el('hil1').value=-1; el('sha2').value=-1; el('hil2').value=-1;
-    el('proc').value=0; el('cell').value=36; el('con').value=25; el('gam').value=29;
+    el('proc').value=2; el('cell').value=64; el('con').value=24; el('gam').value=29;
     el('reg').value=0; el('den').value=0; el('gra').value=0; el('dry').value=0;
     el('ko').checked=true; el('over').checked=false; el('order').checked=false;
+    el('two').checked=true; el('one').checked=false;
     el('kamt').value=100;
     document.querySelectorAll('input[type=range]').forEach(r=>{
       r.parentElement.querySelector('output').textContent = r.value;
     });
+    sync();
     render();
   };
 }
@@ -539,8 +584,9 @@ function buildSVG(){
   const p2 = shape(plates.blue, val('str2')/100, gam, con,
                    val('offx') + Math.round(reg), val('offy') + Math.round(reg*0.6));
   if (den){ const f = unevenness(den); for (let i=0;i<N*N;i++){ p1[i]*=f[i]; p2[i]*=f[i]; } }
-  const backTop = el('order').checked;
-  let lower = backTop ? p1 : p2;
+  const two = el('two').checked;
+  const backTop = two && el('order').checked;
+  let lower = two ? (backTop ? p1 : p2) : new Float32Array(N*N);
   const upper = backTop ? p2 : p1;
   if (el('ko').checked && val('kamt')/100 >= 0.995){
     const sil = backTop ? outline(val('offx')+Math.round(reg),
@@ -611,6 +657,19 @@ let SOURCE = null;
 const SRCMAX = 2400;              // cap the read so a huge file cannot eat memory
 
 function note(t){ el('srcnote').textContent = t; }
+
+// The segmented controls are the visible half of a pair of hidden radios, so
+// everything downstream still reads el('ko').checked and friends.
+function paintSegs(){
+  document.querySelectorAll('.seg button').forEach(b => {
+    b.classList.toggle('on', el(b.dataset.id).checked);
+  });
+}
+function bindSegs(){
+  document.querySelectorAll('.seg button').forEach(b => {
+    b.onclick = () => { el(b.dataset.id).checked = true; sync(); render(); };
+  });
+}
 
 function setPlates(blue, body, t){
   plates = {blue: blue, body: body};
@@ -804,20 +863,13 @@ function useBlob(blob, name, restored){
     if (seq !== loadSeq) return;
     try {
       SOURCE = readImage(im);
+      if (name) el('filename').textContent = name;
       el('flip').value = guessFlip(SOURCE) ? 1 : 0;
       rebuild();
     } catch (e){ fail(); }
   };
   im.onerror = () => { URL.revokeObjectURL(url); fail(); };
   im.src = url;
-}
-
-function useDefault(){
-  loadSeq++;                      // anything still decoding loses its ticket
-  picked = true;                  // and the saved file must not come back
-  SOURCE = null;
-  el('rowCut').classList.add('off');
-  if (DEFAULT_PLATES.blue) setPlates(DEFAULT_PLATES.blue, DEFAULT_PLATES.body, 'the bust, two plates');
 }
 
 // keep the last upload across a reload. The file, not the plates, so Ink from
@@ -832,6 +884,15 @@ function idb(fn){
 }
 function keep(blob){ idb(db => db.transaction('src','readwrite').objectStore('src').put(blob,'img')); }
 function forget(){ idb(db => db.transaction('src','readwrite').objectStore('src').delete('img')); }
+
+function useDefault(){
+  el('filename').textContent = 'Choose a picture';
+  loadSeq++;                      // anything still decoding loses its ticket
+  picked = true;                  // and the saved file must not come back
+  SOURCE = null;
+  el('rowCut').classList.add('off');
+  if (DEFAULT_PLATES.blue) setPlates(DEFAULT_PLATES.blue, DEFAULT_PLATES.body, 'bust 700×700');
+}
 
 for (const k of ['blue','body']){
   const im = new Image();
@@ -850,7 +911,7 @@ for (const k of ['blue','body']){
       idb(db => {
         const rq = db.transaction('src').objectStore('src').get('img');
         rq.onsuccess = () => {
-          if (rq.result && !picked) useBlob(rq.result, 'saved', true);
+          if (rq.result && !picked) useBlob(rq.result, 'your last picture', true);
         };
       });
     }
@@ -867,6 +928,80 @@ el('file').onchange = e => {
   keep(f);
   useBlob(f, f.name);
 };
+
+
+// ---------------------------------------------------------------- random
+// A whole recipe at once. It leaves Source alone: the picture is not part of
+// the recipe, and nobody wants the flip switch thrown under them.
+
+function randomise(){
+  const between = (a, b) => a + Math.floor(Math.random()*(b-a+1));
+  const chance = p => Math.random() < p;
+  const anyInk = () => between(0, INKS.length-1);
+
+  el('sub').value = between(0, SUBS.length-2);   // last one is Transparent
+  const two = !chance(0.2);
+  el('two').checked = two; el('one').checked = !two;
+
+  // hold to an approved palette most of the time, since that is the point of
+  // having ten of them. The rest of the time take two inks freely.
+  if (chance(0.6)){
+    const pi = between(1, PAL.length-1);
+    el('pal').value = pi;
+    const names = PAL[pi][2];
+    el('ink1').value = inkIndex(names[0]);
+    el('ink2').value = inkIndex(names.length > 1 ? names[1] : names[0]);
+    el('over').checked = PAL[pi][1] === 'overprint duotone';
+  } else {
+    el('pal').value = 0;
+    el('ink1').value = anyInk();
+    el('ink2').value = anyInk();
+    el('over').checked = chance(0.35);
+  }
+  el('ko').checked = !el('over').checked;
+
+  el('str1').value = between(80, 115);
+  el('str2').value = between(80, 115);
+
+  // a second ink in the shadows is a decision, so it stays off most of the time
+  el('sha1').value = chance(0.25) ? anyInk() : -1;
+  el('hil1').value = chance(0.20) ? anyInk() : -1;
+  el('sha2').value = chance(0.25) ? anyInk() : -1;
+  el('hil2').value = chance(0.20) ? anyInk() : -1;
+
+  // the offset is what makes the back face a second impression rather than a
+  // copy, so keep it clear of zero and inside the sheet
+  const sgn = () => chance(0.5) ? 1 : -1;
+  el('offx').value = sgn() * between(40, 200);
+  el('offy').value = sgn() * between(10, 90);
+  el('order').checked = chance(0.3);
+  el('kamt').value = chance(0.7) ? 100 : between(30, 95);
+
+  // each process carries its own screen, contrast and gamma. Take those, then
+  // knock them about a little so two draws of the same process differ.
+  const pi = between(0, PROCS.length-1);
+  el('proc').value = pi;
+  const jog = (v, d) => Math.max(0, Math.min(100, v + between(-d, d)));
+  el('cell').value = jog(PROCS[pi].cell, 9);
+  el('con').value  = jog(PROCS[pi].contrast, 8);
+  el('gam').value  = jog(PROCS[pi].gamma, 7);
+
+  // no ceiling on these: any number of them, anywhere on the travel. The
+  // counter still reports when a roll goes past what the work calls for,
+  // which is the counter's job, not a reason to hold the dice back.
+  el('work').value = chance(0.35) ? 1 : 0;
+  IMPS.forEach(id => {
+    el(id).value = between(+el(id).min, +el(id).max);
+  });
+
+  document.querySelectorAll('input[type=range]').forEach(r => {
+    const o = r.parentElement.querySelector('output');
+    if (o) o.textContent = r.value;
+  });
+  sync();
+  limitImperfections();
+  render();
+}
 
 
 bind();

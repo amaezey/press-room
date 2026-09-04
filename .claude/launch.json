@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "press-room",
+      "runtimeExecutable": "/Users/mae/.bun/bin/bun",
+      "runtimeArgs": [
+        "run",
+        "/Users/mae/Documents/press-room/build/dev.js"
+      ],
+      "port": 8777
+    }
+  ]
+}
