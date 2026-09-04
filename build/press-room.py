@@ -121,7 +121,9 @@ function guessFlip(src){
   if (src.cutout) return false;
   const d = src.data;
   let sum = 0, n = 0;
-  const rows = [src.dy+1, src.dy+src.dh-2];
+  const lim = v => Math.min(N-1, Math.max(0, v));
+  const ry0 = lim(src.dy+1), ry1 = lim(src.dy+src.dh-2);
+  const rows = ry0 === ry1 ? [ry0] : [ry0, ry1];
   for (let x = src.dx; x < src.dx+src.dw; x += 4)
     for (const y of rows){
       const i = (y*N+x)*4;
@@ -138,26 +140,36 @@ function pct(hist, total, p){
   return 255;
 }
 
-// anything the background cannot reach from the edge is a hole inside the
-// shape, so it gets filled. Without this a rough cutout knocks out in pinholes.
+// A pinhole in a rough cutout should close. A real opening, the hole in a ring
+// or the gap under an arm, should not. So label each pocket of background and
+// fill only the ones that never reach the edge and stay under a cap set by the
+// size of the shape itself.
 function fillHoles(m){
-  const n = N*N, seen = new Uint8Array(n), st = new Int32Array(n);
-  let sp = 0;
-  const push = i => { if (!m[i] && !seen[i]){ seen[i] = 1; st[sp++] = i; } };
-  for (let x = 0; x < N; x++){ push(x); push((N-1)*N + x); }
-  for (let y = 0; y < N; y++){ push(y*N); push(y*N + N-1); }
-  while (sp){
-    const i = st[--sp], x = i % N, y = (i-x)/N;
-    if (x > 0)   push(i-1);
-    if (x < N-1) push(i+1);
-    if (y > 0)   push(i-N);
-    if (y < N-1) push(i+N);
+  const n = N*N;
+  let fg = 0;
+  for (let i = 0; i < n; i++) if (m[i]) fg++;
+  const cap = Math.max(600, fg*0.01);
+  const seen = new Uint8Array(n), st = new Int32Array(n), pocket = new Int32Array(n);
+  for (let s = 0; s < n; s++){
+    if (m[s] || seen[s]) continue;
+    let sp = 0, np = 0, edge = false;
+    seen[s] = 1; st[sp++] = s;
+    while (sp){
+      const i = st[--sp], x = i % N, y = (i-x)/N;
+      pocket[np++] = i;
+      if (x === 0 || y === 0 || x === N-1 || y === N-1) edge = true;
+      if (x > 0   && !m[i-1] && !seen[i-1]){ seen[i-1] = 1; st[sp++] = i-1; }
+      if (x < N-1 && !m[i+1] && !seen[i+1]){ seen[i+1] = 1; st[sp++] = i+1; }
+      if (y > 0   && !m[i-N] && !seen[i-N]){ seen[i-N] = 1; st[sp++] = i-N; }
+      if (y < N-1 && !m[i+N] && !seen[i+N]){ seen[i+N] = 1; st[sp++] = i+N; }
+    }
+    if (!edge && np <= cap) for (let j = 0; j < np; j++) m[pocket[j]] = 1;
   }
-  for (let i = 0; i < n; i++) if (!m[i] && !seen[i]) m[i] = 1;
 }
 
-// stray specks around a rough cutout print as dirt. Keep the real parts, bin
-// anything under a hundredth of the biggest one.
+// stray specks around a rough cutout print as dirt. Dirt is small in absolute
+// terms, so the relative rule needs a ceiling: without it a real detail beside
+// a large subject counts as a speck and is binned with the rubbish.
 function dropSpecks(m){
   const n = N*N, lab = new Int32Array(n), st = new Int32Array(n), areas = [0];
   let cur = 0;
@@ -178,7 +190,7 @@ function dropSpecks(m){
   }
   let big = 0;
   for (let c = 1; c <= cur; c++) if (areas[c] > big) big = areas[c];
-  const min = big*0.01;
+  const min = Math.min(big*0.01, 400);   // 400px is a blob about 20 across
   for (let i = 0; i < n; i++) if (m[i] && areas[lab[i]] < min) m[i] = 0;
 }
 
@@ -232,22 +244,35 @@ function rebuild(){
   setPlates(blue, body, (cutout ? 'cutout ' : 'no transparency ') + SOURCE.w + '×' + SOURCE.h);
 }
 
-function useBlob(blob, name){
+// Loads are async, so a slow one must not land on top of a later pick. Each
+// gets a ticket and only the newest is allowed to finish.
+let loadSeq = 0, picked = false;
+function useBlob(blob, name, restored){
+  const seq = ++loadSeq;
   const url = URL.createObjectURL(blob);
   const im = new Image();
+  const fail = () => {
+    if (seq !== loadSeq) return;
+    // a saved file that will not decode would fail again on every reload
+    if (restored){ forget(); useDefault(); return; }
+    note('could not read that image');
+  };
   im.onload = () => {
     URL.revokeObjectURL(url);
+    if (seq !== loadSeq) return;
     try {
       SOURCE = readImage(im);
       el('flip').value = guessFlip(SOURCE) ? 1 : 0;
       rebuild();
-    } catch (e){ note('could not read that image'); }
+    } catch (e){ fail(); }
   };
-  im.onerror = () => { URL.revokeObjectURL(url); note('could not read that image'); };
+  im.onerror = () => { URL.revokeObjectURL(url); fail(); };
   im.src = url;
 }
 
 function useDefault(){
+  loadSeq++;                      // anything still decoding loses its ticket
+  picked = true;                  // and the saved file must not come back
   SOURCE = null;
   el('rowCut').classList.add('off');
   if (DEFAULT_PLATES.blue) setPlates(DEFAULT_PLATES.blue, DEFAULT_PLATES.body, 'the bust, two plates');
@@ -277,10 +302,14 @@ for (const k of ['blue','body']){
     for (let i = 0; i < N*N; i++) a[i] = d[i*4]/255;   // the mask is greyscale
     DEFAULT_PLATES[k] = a;
     if (DEFAULT_PLATES.blue && DEFAULT_PLATES.body){
+      const claimed = picked;   // did anything land while the bust was loading
       useDefault();
+      picked = claimed;
       idb(db => {
         const rq = db.transaction('src').objectStore('src').get('img');
-        rq.onsuccess = () => { if (rq.result) useBlob(rq.result, 'saved'); };
+        rq.onsuccess = () => {
+          if (rq.result && !picked) useBlob(rq.result, 'saved', true);
+        };
       });
     }
   };
@@ -290,6 +319,7 @@ for (const k of ['blue','body']){
 el('file').onchange = e => {
   const f = e.target.files && e.target.files[0];
   if (!f) return;
+  picked = true;
   if (!/^image\//.test(f.type)){ note('that is not an image'); return; }
   if (f.size > 40e6){ note('too big, keep it under 40 MB'); return; }
   keep(f);
