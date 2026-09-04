@@ -64,6 +64,19 @@ button.act:hover{border-color:var(--edge)}
 
 <div class="wrap">
   <div class="panel">
+    <fieldset><legend>Source</legend>
+      <div class="row"><label>Image</label>
+        <input type="file" id="file" accept="image/*"
+          style="font:400 11px/16px var(--f-mono);color:var(--dim)"><output></output></div>
+      <div class="row"><label>Ink from</label>
+        <select id="flip"><option value="0">Dark areas</option>
+        <option value="1">Light areas</option></select><output></output></div>
+      <div class="row off" id="rowCut"><label>Cutout</label>
+        <input type="range" id="cut" min="0" max="100" value="50"><output>50</output></div>
+      <div class="row"><label>Plate</label>
+        <span id="srcnote" style="font:400 11px/16px var(--f-mono);color:var(--dim)"></span><output></output></div>
+    </fieldset>
+
     <fieldset><legend>Background</legend>
       <div class="row"><label>Background</label>
         <select id="sub"><option value="0" selected>Neutral White</option><option value="1">Cool Gray</option><option value="2">Pale Beige</option><option value="3">app Paper</option><option value="4">app Surface</option><option value="5">app dark</option><option value="6">app panel dark</option><option value="7">about dark</option><option value="8">Transparent</option></select><output></output></div>
@@ -161,26 +174,11 @@ const SRC = {blue:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAArwAAAK8CAAAAAA
 const N = 1400;
 const out = document.getElementById('out');
 const ctx = out.getContext('2d', {willReadFrequently:true});
-const plates = {};
+let plates = {};
 let ready = 0;
 
 function hex2rgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),
   parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
-
-for (const k of ['blue','body']) {
-  const im = new Image();
-  im.onload = () => {
-    const c = document.createElement('canvas'); c.width=N; c.height=N;
-    const cx = c.getContext('2d', {willReadFrequently:true});
-    cx.drawImage(im,0,0,N,N);
-    const d = cx.getImageData(0,0,N,N).data;
-    const a = new Float32Array(N*N);
-    for (let i=0;i<N*N;i++) a[i] = d[i*4]/255;   // the mask is greyscale
-    plates[k] = a;
-    if (++ready === 2) render();
-  };
-  im.src = SRC[k];
-}
 
 function el(id){return document.getElementById(id);}
 function val(id){return +el(id).value;}
@@ -474,6 +472,12 @@ function limitImperfections(){
 function bind(){
   document.querySelectorAll('select,input').forEach(n => {
     n.addEventListener('input', () => {
+      if (n.id === 'file') return;
+      if (n.id === 'flip' || n.id === 'cut') {
+        const oc = n.parentElement.querySelector('output');
+        if (oc && n.type === 'range') oc.textContent = n.value;
+        rebuild(); return;
+      }
       const o = n.parentElement.querySelector('output');
       if (o && n.type === 'range'){
         o.textContent = n.value;
@@ -505,6 +509,8 @@ function bind(){
     render();
   };
   el('reset').onclick = () => {
+    forget(); el('file').value=''; el('flip').value=0; el('cut').value=50;
+    useDefault();
     el('sub').value=0; el('ink1').value=15; el('ink2').value=10;
     el('str1').value=100; el('str2').value=100;
     el('offx').value=138; el('offy').value=25;
@@ -592,6 +598,246 @@ function saveBlob(blob, ext){
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
+
+
+// ---------------------------------------------------------------- source
+// The press works on two arrays: a density plate and a silhouette. The bust
+// arrives as two traced masks; an uploaded picture has to be turned into the
+// same pair. Transparency gives both at once, which is why a cutout PNG is
+// the good case.
+
+const DEFAULT_PLATES = {};
+let SOURCE = null;
+const SRCMAX = 2400;              // cap the read so a huge file cannot eat memory
+
+function note(t){ el('srcnote').textContent = t; }
+
+function setPlates(blue, body, t){
+  plates = {blue: blue, body: body};
+  ready = 2;
+  note(t);
+  render();
+}
+
+// draw the picture into the square: contain, centred, never cropped. Fully
+// clear margins are trimmed first, since there is nothing in them to lose.
+function readImage(img){
+  const nw = img.naturalWidth || img.width, nh = img.naturalHeight || img.height;
+  if (!nw || !nh) throw new Error('empty');
+  const k = Math.min(1, SRCMAX / Math.max(nw, nh));
+  const aw = Math.max(1, Math.round(nw*k)), ah = Math.max(1, Math.round(nh*k));
+  const A = document.createElement('canvas'); A.width = aw; A.height = ah;
+  const actx = A.getContext('2d', {willReadFrequently:true});
+  actx.drawImage(img, 0, 0, aw, ah);
+  const ad = actx.getImageData(0, 0, aw, ah).data;
+
+  let clear = 0, x0 = aw, y0 = ah, x1 = -1, y1 = -1;
+  for (let y = 0; y < ah; y++) for (let x = 0; x < aw; x++){
+    if (ad[(y*aw+x)*4+3] < 16){ clear++; continue; }
+    if (x < x0) x0 = x;
+    if (x > x1) x1 = x;
+    if (y < y0) y0 = y;
+    if (y > y1) y1 = y;
+  }
+  // a stray pixel or two of anti-aliasing is not a cutout
+  const cutout = clear > aw*ah*0.01;
+  if (!cutout || x1 < 0){ x0 = 0; y0 = 0; x1 = aw-1; y1 = ah-1; }
+  const bw = x1-x0+1, bh = y1-y0+1;
+
+  const s = Math.min(N/bw, N/bh);
+  const dw = Math.max(1, Math.round(bw*s)), dh = Math.max(1, Math.round(bh*s));
+  const dx = (N-dw) >> 1, dy = (N-dh) >> 1;
+  const B = document.createElement('canvas'); B.width = N; B.height = N;
+  const bctx = B.getContext('2d', {willReadFrequently:true});
+  bctx.imageSmoothingEnabled = true;
+  bctx.imageSmoothingQuality = 'high';
+  bctx.drawImage(A, x0, y0, bw, bh, dx, dy, dw, dh);
+  return {data: bctx.getImageData(0,0,N,N).data,
+          cutout: cutout, w: nw, h: nh, dx: dx, dy: dy, dw: dw, dh: dh};
+}
+
+// on a full-frame photo the ground says which way round it is: a dark ground
+// means the picture is carried by its light areas. Sampled inside the drawn
+// rectangle, not the letterbox, or the empty bars would decide it.
+function guessFlip(src){
+  if (src.cutout) return false;
+  const d = src.data;
+  let sum = 0, n = 0;
+  const rows = [src.dy+1, src.dy+src.dh-2];
+  for (let x = src.dx; x < src.dx+src.dw; x += 4)
+    for (const y of rows){
+      const i = (y*N+x)*4;
+      sum += 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2];
+      n++;
+    }
+  return n ? (sum/n/255) < 0.45 : false;
+}
+
+function pct(hist, total, p){
+  const want = total*p;
+  let acc = 0;
+  for (let i = 0; i < 256; i++){ acc += hist[i]; if (acc >= want) return i; }
+  return 255;
+}
+
+// anything the background cannot reach from the edge is a hole inside the
+// shape, so it gets filled. Without this a rough cutout knocks out in pinholes.
+function fillHoles(m){
+  const n = N*N, seen = new Uint8Array(n), st = new Int32Array(n);
+  let sp = 0;
+  const push = i => { if (!m[i] && !seen[i]){ seen[i] = 1; st[sp++] = i; } };
+  for (let x = 0; x < N; x++){ push(x); push((N-1)*N + x); }
+  for (let y = 0; y < N; y++){ push(y*N); push(y*N + N-1); }
+  while (sp){
+    const i = st[--sp], x = i % N, y = (i-x)/N;
+    if (x > 0)   push(i-1);
+    if (x < N-1) push(i+1);
+    if (y > 0)   push(i-N);
+    if (y < N-1) push(i+N);
+  }
+  for (let i = 0; i < n; i++) if (!m[i] && !seen[i]) m[i] = 1;
+}
+
+// stray specks around a rough cutout print as dirt. Keep the real parts, bin
+// anything under a hundredth of the biggest one.
+function dropSpecks(m){
+  const n = N*N, lab = new Int32Array(n), st = new Int32Array(n), areas = [0];
+  let cur = 0;
+  for (let s = 0; s < n; s++){
+    if (!m[s] || lab[s]) continue;
+    cur++;
+    let sp = 0, area = 0;
+    lab[s] = cur; st[sp++] = s;
+    while (sp){
+      const i = st[--sp], x = i % N, y = (i-x)/N;
+      area++;
+      if (x > 0   && m[i-1] && !lab[i-1]){ lab[i-1] = cur; st[sp++] = i-1; }
+      if (x < N-1 && m[i+1] && !lab[i+1]){ lab[i+1] = cur; st[sp++] = i+1; }
+      if (y > 0   && m[i-N] && !lab[i-N]){ lab[i-N] = cur; st[sp++] = i-N; }
+      if (y < N-1 && m[i+N] && !lab[i+N]){ lab[i+N] = cur; st[sp++] = i+N; }
+    }
+    areas[cur] = area;
+  }
+  let big = 0;
+  for (let c = 1; c <= cur; c++) if (areas[c] > big) big = areas[c];
+  const min = big*0.01;
+  for (let i = 0; i < n; i++) if (m[i] && areas[lab[i]] < min) m[i] = 0;
+}
+
+// turn the held picture into the two plates, at the current Ink from / Cutout
+function rebuild(){
+  if (!SOURCE) return;
+  const d = SOURCE.data, n = N*N, cutout = SOURCE.cutout;
+  const fromLight = val('flip') === 1;
+  const alpha = new Float32Array(n), ink = new Float32Array(n);
+  for (let i = 0; i < n; i++){
+    alpha[i] = d[i*4+3]/255;
+    // perceptual luminance, so a red and a blue of the same brightness agree
+    const l = (0.2126*d[i*4] + 0.7152*d[i*4+1] + 0.0722*d[i*4+2])/255;
+    ink[i] = fromLight ? l : 1-l;
+  }
+
+  // auto-level on the 2nd and 98th percentile of what is inside the shape, so
+  // one blown highlight cannot flatten the whole plate
+  const hist = new Int32Array(256);
+  let inShape = 0;
+  for (let i = 0; i < n; i++) if (alpha[i] > 0.5){ hist[Math.round(ink[i]*255)]++; inShape++; }
+  if (inShape > 500){
+    const lo = pct(hist, inShape, 0.02), hi = pct(hist, inShape, 0.98);
+    if (hi - lo > 6){
+      const a0 = lo/255, r = 1/((hi/255) - a0);
+      for (let i = 0; i < n; i++){
+        const v = (ink[i]-a0)*r;
+        ink[i] = v < 0 ? 0 : (v > 1 ? 1 : v);
+      }
+    }
+  }
+
+  const blue = new Float32Array(n);
+  for (let i = 0; i < n; i++) blue[i] = ink[i]*alpha[i];
+
+  // transparency gives the silhouette directly. Without it we have to carve
+  // one out of the density, which is what the Cutout slider is for.
+  const mask = new Uint8Array(n);
+  if (cutout) for (let i = 0; i < n; i++) mask[i] = alpha[i] > 0.5 ? 1 : 0;
+  else { const t = val('cut')/100; for (let i = 0; i < n; i++) mask[i] = blue[i] > t ? 1 : 0; }
+  fillHoles(mask);
+  dropSpecks(mask);
+  // the cleaned shape gates the ink too, or the specks we just binned would
+  // still print as dirt. Only for a cutout: on a full frame the picture is
+  // the whole sheet and the mask is a carve for the knockout, nothing more.
+  if (cutout) for (let i = 0; i < n; i++) blue[i] *= mask[i];
+  const body = new Float32Array(n);
+  for (let i = 0; i < n; i++) body[i] = mask[i];
+
+  el('rowCut').classList.toggle('off', cutout);
+  setPlates(blue, body, (cutout ? 'cutout ' : 'no transparency ') + SOURCE.w + '×' + SOURCE.h);
+}
+
+function useBlob(blob, name){
+  const url = URL.createObjectURL(blob);
+  const im = new Image();
+  im.onload = () => {
+    URL.revokeObjectURL(url);
+    try {
+      SOURCE = readImage(im);
+      el('flip').value = guessFlip(SOURCE) ? 1 : 0;
+      rebuild();
+    } catch (e){ note('could not read that image'); }
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); note('could not read that image'); };
+  im.src = url;
+}
+
+function useDefault(){
+  SOURCE = null;
+  el('rowCut').classList.add('off');
+  if (DEFAULT_PLATES.blue) setPlates(DEFAULT_PLATES.blue, DEFAULT_PLATES.body, 'the bust, two plates');
+}
+
+// keep the last upload across a reload. The file, not the plates, so Ink from
+// and Cutout still work afterwards.
+function idb(fn){
+  try {
+    const rq = indexedDB.open('press-room', 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore('src');
+    rq.onsuccess = () => { try { fn(rq.result); } catch (e){} };
+    rq.onerror = () => {};
+  } catch (e){}
+}
+function keep(blob){ idb(db => db.transaction('src','readwrite').objectStore('src').put(blob,'img')); }
+function forget(){ idb(db => db.transaction('src','readwrite').objectStore('src').delete('img')); }
+
+for (const k of ['blue','body']){
+  const im = new Image();
+  im.onload = () => {
+    const c = document.createElement('canvas'); c.width = N; c.height = N;
+    const cx = c.getContext('2d', {willReadFrequently:true});
+    cx.drawImage(im, 0, 0, N, N);
+    const d = cx.getImageData(0, 0, N, N).data;
+    const a = new Float32Array(N*N);
+    for (let i = 0; i < N*N; i++) a[i] = d[i*4]/255;   // the mask is greyscale
+    DEFAULT_PLATES[k] = a;
+    if (DEFAULT_PLATES.blue && DEFAULT_PLATES.body){
+      useDefault();
+      idb(db => {
+        const rq = db.transaction('src').objectStore('src').get('img');
+        rq.onsuccess = () => { if (rq.result) useBlob(rq.result, 'saved'); };
+      });
+    }
+  };
+  im.src = SRC[k];
+}
+
+el('file').onchange = e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  if (!/^image\//.test(f.type)){ note('that is not an image'); return; }
+  if (f.size > 40e6){ note('too big, keep it under 40 MB'); return; }
+  keep(f);
+  useBlob(f, f.name);
+};
+
 
 bind();
 
