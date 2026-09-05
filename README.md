@@ -12,7 +12,8 @@ Live: https://human-eyes-press-room.netlify.app
 - **Source** your own picture (PNG with transparent background works best).
 - **Background** colour.
 - **Palette** ink colour, with ten ready-made presets or pick your own combo.
-- **Front face** ink, strength, shadow ink, highlight ink.
+- **Front face** ink, strength, shadow ink and highlight ink, each with
+  its own mix.
 - **Back face** as above, x and y position.
 - **Reproduction** process, screen, contrast, gamma, knockout or overprint,
   and which face sits on top.
