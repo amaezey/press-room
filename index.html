@@ -10,7 +10,7 @@
 :root{--f-sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
 --f-mono:"JetBrains Mono",ui-monospace,monospace;
 --sheet:#EDECE7;--edge:#26251F;--dim:#6E6C66;
---line:#CFCEC8;color-scheme:light}
+--line:#CFCEC8;--ease:cubic-bezier(.23,1,.32,1);color-scheme:light}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--sheet);color:var(--edge);
@@ -20,7 +20,7 @@ h1,h2,h3,p{margin:0}
 .top{flex:none;display:flex;align-items:center;gap:13px;height:44px;
 padding:0 16px;background:#F4F3EE;border-bottom:1px solid var(--edge)}
 .top .bar{flex:none;display:flex;box-shadow:0 0 0 1px rgba(38,37,31,.2)}
-.top .bar i{display:block;width:15px;height:15px}
+.top .bar i{display:block;width:15px;height:15px;transition:background-color 200ms ease}
 .top h1{font:600 12px/1 var(--f-mono);letter-spacing:.185em;
 text-transform:uppercase;color:var(--edge);white-space:nowrap}
 .top .readout{flex:1;min-width:0;padding-left:13px;
@@ -43,7 +43,7 @@ border:1px solid var(--line);display:block}
   border-bottom:1px solid var(--edge)}
   .panel{width:100%;overflow:visible;border-right:0}
   #out{width:100%;height:auto;flex:none}
-  .acts{flex-wrap:wrap}
+  .acts{flex-wrap:wrap} .acts .save{padding-left:0;border-left:0}
 }
 
 fieldset{border:0;border-bottom:1px solid var(--line);margin:0;padding:0 0 14px}
@@ -51,7 +51,7 @@ legend{display:block;width:100%;padding:13px 16px 8px;
 font:500 11px/15px var(--f-mono);letter-spacing:.11em;text-transform:uppercase;
 color:var(--dim)}
 .row{display:grid;grid-template-columns:84px minmax(0,1fr) 34px;gap:10px;align-items:center;
-padding:0 16px;margin-top:9px}
+padding:0 16px;margin-top:9px;transition:opacity 200ms ease}
 .row label{font:400 13px/18px var(--f-sans);color:var(--edge)}
 .row output{font:400 12px/16px var(--f-mono);color:var(--dim);text-align:right}
 select,input[type=range]{width:100%;min-width:0;margin:0}
@@ -68,24 +68,44 @@ border-radius:4px;background:#fff;overflow:hidden}
 .seg button{flex:1;min-width:0;padding:0 4px;border:0;
 border-right:1px solid var(--line);background:transparent;cursor:pointer;
 font:400 12px/16px var(--f-sans);color:var(--dim);
-white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:transform 160ms var(--ease)}
 .seg button:last-child{border-right:0}
-.seg button:not(.on):hover{background:#F4F3EE;color:var(--edge)}
 .seg button.on{background:#63365F;color:#fff}
 .file{position:relative;display:flex;align-items:center;gap:7px;height:30px;
 padding:0 9px;border:1px solid var(--line);background:#fff;border-radius:4px;
-cursor:pointer;font:400 12px/16px var(--f-mono);color:var(--dim);min-width:0}
-.file:hover{border-color:var(--edge)}
+cursor:pointer;font:400 12px/16px var(--f-mono);color:var(--dim);min-width:0;
+transition:border-color 150ms ease,background-color 150ms ease}
 body.dropping .stage{outline:2px dashed var(--edge);outline-offset:-10px}
 body.dropping .file{border-color:var(--edge);background:#F4F3EE}
 .file:focus-within{border-color:var(--edge);box-shadow:0 0 0 2px rgba(99,54,95,.22)}
 .file input{position:absolute;inset:0;opacity:0;pointer-events:none}
 .file span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-button.act{border:1px solid var(--line);background:#fff;cursor:pointer;
-padding:0 14px;height:30px;font:400 13px/18px var(--f-sans);
-color:var(--edge);border-radius:4px}
-button.act:hover{border-color:var(--edge)}
+button.act{display:inline-flex;align-items:center;gap:7px;
+border:1px solid var(--line);background:#fff;cursor:pointer;
+padding:0 12px;height:30px;font:400 13px/18px var(--f-sans);
+color:var(--edge);border-radius:4px;
+transition:transform 160ms var(--ease),border-color 150ms ease,background-color 150ms ease}
+button.act svg{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;
+stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+button.act.dl{background:var(--edge);border-color:var(--edge);color:#fff}
+.save{display:flex;align-items:center;gap:8px;padding-left:12px;border-left:1px solid var(--line)}
+button.act:active,.seg button:active,.file:active{transform:scale(.97)}
+select:focus-visible,button.act:focus-visible{outline:0;border-color:var(--edge);
+box-shadow:0 0 0 2px rgba(99,54,95,.22)}
+.seg button:focus-visible{outline:2px solid rgba(99,54,95,.5);outline-offset:-2px}
+@media(hover:hover){
+  .seg button:not(.on):hover{background:#F4F3EE;color:var(--edge)}
+  .file:hover,button.act:hover{border-color:var(--edge)}
+  button.act.dl:hover{background:#3B3A33;border-color:#3B3A33}
+}
+@media(prefers-reduced-motion:reduce){
+  button.act:active,.seg button:active,.file:active{transform:none}
+}
 </style>
+<svg style="display:none"><symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M18 2l4 4-4 4M2 6h1.9c1.5 0 2.9.9 3.6 2.2M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8M18 14l4 4-4 4"/></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"/></symbol>
+<symbol id="i-dl" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol></svg>
 
 <div class="top"><span class="bar"><i id="chip1"></i><i id="chip2"></i></span>
 <h1>Press room</h1>
@@ -196,13 +216,15 @@ button.act:hover{border-color:var(--edge)}
   <div class="stage">
     <canvas id="out" width="1400" height="1400"></canvas>
     <div class="acts">
-      <button class="act" id="rand">Random</button>
-      <button class="act" id="swap">Swap</button>
-      <button class="act" id="reset">Reset</button>
-      <button class="act" id="dl">PNG</button>
-      <button class="act" id="svg">SVG</button>
-      <label class="chk"><input type="checkbox" id="alpha">
-        <span>Transparent</span></label>
+      <button class="act" id="rand"><svg><use href="#i-shuffle"/></svg>Random</button>
+      <button class="act" id="swap"><svg><use href="#i-swap"/></svg>Swap</button>
+      <button class="act" id="reset"><svg><use href="#i-reset"/></svg>Reset</button>
+      <span class="save">
+        <button class="act dl" id="dl"><svg><use href="#i-dl"/></svg>Save PNG</button>
+        <button class="act dl" id="svg"><svg><use href="#i-dl"/></svg>Save SVG</button>
+        <label class="chk"><input type="checkbox" id="alpha">
+          <span>Transparent</span></label>
+      </span>
     </div>
   </div>
 </div>

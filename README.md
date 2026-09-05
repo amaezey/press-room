@@ -19,7 +19,7 @@ Live: https://human-eyes-press-room.netlify.app
 - **Reproduction** process, screen, contrast, gamma, knockout or overprint,
   and which face sits on top.
 - **Imperfections** registration, ink density, grain, dry edge.
-- **Download** as PNG or SVG, transparent background optional
+- **Save PNG** or **Save SVG**, transparent background optional
 
 ## Run
 
