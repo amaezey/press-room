@@ -3,11 +3,8 @@
   "configurations": [
     {
       "name": "press-room",
-      "runtimeExecutable": "/Users/mae/.bun/bin/bun",
-      "runtimeArgs": [
-        "run",
-        "/Users/mae/Documents/press-room/build/dev.js"
-      ],
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8777"],
       "port": 8777
     }
   ]

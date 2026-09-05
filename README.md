@@ -21,11 +21,9 @@ Live: https://human-eyes-press-room.netlify.app
 - **Imperfections** registration, ink density, grain, dry edge.
 - **Download** as PNG or SVG, transparent background optional
 
-## Build
+## Run
 
-    python3 build/press-room.py
+    python3 -m http.server 8777
 
-Writes `index.html`, which is the whole app. `build/mask-blue.txt` and
-`build/mask-body.txt` are the two masks, stored as base64 PNGs. Netlify serves
-the repository root.
-
+`index.html` is the whole app. `mask-blue.png` and `mask-body.png` are the two
+plates for the default image. Netlify serves the repository root.
