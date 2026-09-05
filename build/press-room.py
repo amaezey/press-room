@@ -67,6 +67,7 @@ UPLOAD_JS = r"""
 
 const DEFAULT_PLATES = {};
 let SOURCE = null;
+let UPLOAD = null;          // the decoded upload, kept so Image can swap back
 const SRCMAX = 2400;              // cap the read so a huge file cannot eat memory
 
 function note(t){ el('srcnote').textContent = t; }
@@ -275,8 +276,10 @@ function useBlob(blob, name, restored){
     URL.revokeObjectURL(url);
     if (seq !== loadSeq) return;
     try {
-      SOURCE = readImage(im);
-      if (name) el('filename').textContent = name;
+      UPLOAD = {src: readImage(im), name: name || 'Your picture'};
+      SOURCE = UPLOAD.src;
+      el('filename').textContent = UPLOAD.name;
+      offerUpload(UPLOAD.name);
       el('flip').value = guessFlip(SOURCE) ? 1 : 0;
       rebuild();
     } catch (e){ fail(); }
@@ -312,11 +315,28 @@ function defaultPlates(){
   setPlates(blue, body, 'Built in · 700×700');
 }
 
+// draw whichever of the two the Image dropdown is pointing at
+function showPick(){
+  const wantUpload = val('pick') === 1 && UPLOAD;
+  SOURCE = wantUpload ? UPLOAD.src : null;
+  if (SOURCE) rebuild();
+  else { el('rowCut').classList.add('off'); defaultPlates(); }
+}
+
+// the dropdown only earns its place once there is a second thing to pick
+function offerUpload(name){
+  let o = el('pick').options[1];
+  if (!o){ o = new Option(name, '1'); el('pick').add(o); }
+  o.text = name;
+  el('pick').value = 1;
+}
+
 function useDefault(){
   el('filename').textContent = 'Choose or drop';
   loadSeq++;                      // anything still decoding loses its ticket
   picked = true;                  // and the saved file must not come back
   SOURCE = null;
+  el('pick').value = 0;
   el('rowCut').classList.add('off');
   defaultPlates();
 }
@@ -543,6 +563,8 @@ button.act:hover{{border-color:var(--edge)}}
   <div class="panel">
     <fieldset><legend>Source</legend>
       <div class="row"><label>Image</label>
+        <select id="pick"><option value="0">Default</option></select><output></output></div>
+      <div class="row"><label>Upload</label>
         <label class="file"><input type="file" id="file"
             accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.avif,.bmp,.svg">
           <span id="filename">Choose or drop</span></label><output></output></div>
@@ -973,6 +995,7 @@ function bind(){{
   document.querySelectorAll('select,input').forEach(n => {{
     n.addEventListener('input', () => {{
       if (n.id === 'file') return;
+      if (n.id === 'pick'){{ showPick(); return; }}
       if (n.id === 'flip' || n.id === 'cut') {{
         const oc = n.parentElement.querySelector('output');
         if (oc && n.type === 'range') oc.textContent = n.value;
@@ -1010,8 +1033,8 @@ function bind(){{
     render();
   }};
   el('reset').onclick = () => {{
-    forget(); el('file').value=''; el('flip').value=0; el('cut').value=50;
-    useDefault();
+    el('file').value=''; el('cut').value=50;
+    el('flip').value = SOURCE && guessFlip(SOURCE) ? 1 : 0;
     el('sub').value=0; el('ink1').value=15; el('ink2').value=10;
     el('str1').value=100; el('str2').value=100;
     el('offx').value=138; el('offy').value=25;
@@ -1026,7 +1049,7 @@ function bind(){{
       r.parentElement.querySelector('output').textContent = r.value;
     }});
     sync();
-    render();
+    showPick();          // redraws whichever picture is loaded, at its base
   }};
 }}
 
