@@ -1032,11 +1032,16 @@ for (const id of ['sha1','hil1','sha2','hil2']) fill(id, inkNames, -1, 'Same as 
 fill('proc', PROCS.map(p => p.name), 2);
 bind();
 
+// nothing to save until the plates have arrived
 el('dl').onclick = () => {
+  if (!plates.body) return;
   const clear = el('alpha').checked;
   if (clear) render(true);
   out.toBlob(b => { saveBlob(b,'png'); if (clear) render(); }, 'image/png');
 };
-el('svg').onclick = () => saveBlob(new Blob([buildSVG().svg],{type:'image/svg+xml'}),'svg');
+el('svg').onclick = () => {
+  if (!plates.body) return;
+  saveBlob(new Blob([buildSVG().svg],{type:'image/svg+xml'}),'svg');
+};
 </script>
 </body></html>
