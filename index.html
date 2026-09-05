@@ -816,10 +816,10 @@ function rebuild(){
   else { const t = val('cut')/100; for (let i = 0; i < n; i++) mask[i] = blue[i] > t ? 1 : 0; }
   fillHoles(mask);
   dropSpecks(mask);
-  // the cleaned shape gates the ink too, or the specks we just binned would
-  // still print as dirt. Only for a cutout: on a full frame the picture is
-  // the whole sheet and the mask is a carve for the knockout, nothing more.
-  if (cutout) for (let i = 0; i < n; i++) blue[i] *= mask[i];
+  // the cleaned shape gates the ink, or the specks we just binned would still
+  // print as dirt. It gates a carved shape too: that is what Cutout is for, so
+  // the slider runs from the full frame at 0 to a tight shape at the top.
+  for (let i = 0; i < n; i++) blue[i] *= mask[i];
   const body = new Float32Array(n);
   for (let i = 0; i < n; i++) body[i] = mask[i];
 
