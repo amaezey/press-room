@@ -9,7 +9,8 @@ Live: https://human-eyes-press-room.netlify.app
 
 ## Controls
 
-- **Source** your own picture (PNG with transparent background works best).
+- **Source** the default image or your own picture, dropped or picked
+  (PNG with transparent background works best). Reset leaves it alone.
 - **Background** colour.
 - **Palette** ink colour, with ten ready-made presets or pick your own combo.
 - **Front face** ink, strength, shadow ink and highlight ink, each with
