@@ -72,6 +72,8 @@ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 padding:0 9px;border:1px solid var(--line);background:#fff;border-radius:4px;
 cursor:pointer;font:400 12px/16px var(--f-mono);color:var(--dim);min-width:0}
 .file:hover{border-color:var(--edge)}
+body.dropping .stage{outline:2px dashed var(--edge);outline-offset:-10px}
+body.dropping .file{border-color:var(--edge);background:#F4F3EE}
 .file:focus-within{border-color:var(--edge);box-shadow:0 0 0 2px rgba(99,54,95,.22)}
 .file input{position:absolute;inset:0;opacity:0;pointer-events:none}
 .file span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -90,26 +92,24 @@ button.act:hover{border-color:var(--edge)}
     <fieldset><legend>Source</legend>
       <div class="row"><label>Image</label>
         <label class="file"><input type="file" id="file" accept="image/*">
-          <span id="filename">Choose a picture</span></label><output></output></div>
+          <span id="filename">Choose a picture, or drop one</span></label><output></output></div>
       <div class="row"><label>Ink from</label>
         <select id="flip"><option value="0">Dark areas</option>
         <option value="1">Light areas</option></select><output></output></div>
       <div class="row off" id="rowCut"><label>Cutout</label>
         <input type="range" id="cut" min="0" max="100" value="50"><output>50</output></div>
-      <div class="row"><label>Picture</label>
+      <div class="row"><label>Outline</label>
         <span id="srcnote" style="font:400 11px/16px var(--f-mono);color:var(--dim)"></span><output></output></div>
     </fieldset>
 
     <fieldset><legend>Background</legend>
       <div class="row"><label>Background</label>
-        <select id="sub"><option value="0" selected>Neutral White</option><option value="1">Cool Gray</option><option value="2">Pale Beige</option><option value="3">app Paper</option><option value="4">app Surface</option><option value="5">app dark</option><option value="6">app panel dark</option><option value="7">about dark</option><option value="8">Transparent</option></select><output></output></div>
+        <select id="sub"><option value="0" selected>Neutral White</option><option value="1">Cool Gray</option><option value="2">Pale Beige</option><option value="3">app Paper</option><option value="4">app Surface</option><option value="5">app dark</option><option value="6">app panel dark</option><option value="7">about dark</option></select><output></output></div>
     </fieldset>
 
     <fieldset><legend>Palette</legend>
       <div class="row"><label>Preset</label>
         <select id="pal"><option value="0" selected>Custom</option><option value="1">Cobalt</option><option value="2">Terracotta</option><option value="3">Signal Red</option><option value="4">Aubergine</option><option value="5">Charcoal + Signal Red</option><option value="6">Cobalt + Terracotta</option><option value="7">Ultramarine + Safety Orange</option><option value="8">Botanical Green + Oxblood</option><option value="9">Cyan + Brick Red</option><option value="10">Mint Green + Warm Charcoal</option></select><output></output></div>
-      <div class="row"><label>Mode</label>
-        <span id="mode" style="font:400 13px/18px var(--f-sans)"></span><output></output></div>
     </fieldset>
 
     <fieldset><legend>Front face</legend>
@@ -159,15 +159,14 @@ button.act:hover{border-color:var(--edge)}
         <input type="radio" name="meet" id="over" hidden><output></output></div>
       <div class="row"><label>Knockout</label>
         <input type="range" id="kamt" min="0" max="100" value="100"><output>100</output></div>
-      <div class="chk"><input type="checkbox" id="order">
-        <label for="order">Back face on top</label></div>
+      <div class="row" id="rowOrder"><label>On top</label>
+        <div class="seg"><button type="button" data-id="front">Front face</button>
+        <button type="button" data-id="order">Back face</button></div>
+        <input type="radio" name="ord" id="front" checked hidden>
+        <input type="radio" name="ord" id="order" hidden><output></output></div>
     </fieldset>
 
     <fieldset><legend>Imperfections</legend>
-      <div class="row"><label>Work</label>
-        <select id="work" title="contemporary takes up to 2, tactile 2 to 3">
-        <option value="0">Contemporary</option>
-        <option value="1">Tactile</option></select><output id="ncount"></output></div>
       <div class="row"><label>Registration</label>
         <input type="range" id="reg" min="0" max="100" value="0"><output>0</output></div>
       <div class="row"><label>Ink density</label>
@@ -448,7 +447,6 @@ function render(){
   }
   ctx.globalCompositeOperation = 'source-over';
 
-  el('mode').textContent = resolveMode();
   el('chip1').style.background = INKS[val('ink1')].hex;
   el('chip2').style.background = INKS[val('ink2')].hex;
   el('chip2').hidden = !two;
@@ -466,7 +464,7 @@ function sync(){
   for (const id of ['ink2','str2','offx','offy','sha2','hil2'])
     el(id).closest('.row').classList.toggle('off', !two);
   el('rowMeet').classList.toggle('off', !two);
-  el('order').closest('.chk').classList.toggle('off', !two);
+  el('rowOrder').classList.toggle('off', !two);
   const p = PROCS[val('proc')];
   const live = p.screen !== 'none';
   el('cell').closest('.row').classList.toggle('off', !live);
@@ -494,22 +492,6 @@ function resolveMode(){
   return 'complementary duotone';
 }
 
-// the skill allows 0-2 effects on contemporary work, 2-3 on tactile
-const IMPS = ['reg','den','gra','dry'];
-function limitImperfections(){
-  // the skill's count is a rule about the recipe, not a licence to move a
-  // slider someone set: this reports, it never overrides
-  const tactile = val('work') === 1;
-  const lo = tactile ? 2 : 0, hi = tactile ? 3 : 2;
-  const on = IMPS.filter(id => val(id) > 0).length;
-  const out = on < lo || on > hi;
-  el('ncount').textContent = on + '/' + hi;
-  el('ncount').style.color = out ? '#C83232' : '';
-  el('ncount').title = out
-    ? (tactile ? 'tactile work takes 2 to 3' : 'contemporary work takes up to 2')
-    : '';
-}
-
 function bind(){
   document.querySelectorAll('select,input').forEach(n => {
     n.addEventListener('input', () => {
@@ -523,7 +505,6 @@ function bind(){
       if (o && n.type === 'range'){
         o.textContent = n.value;
       }
-      if (IMPS.includes(n.id) || n.id === 'work') limitImperfections();
       if (n.id === 'pal' && val('pal') > 0) {
         const names = PAL[val('pal')][2];
         el('ink1').value = inkIndex(names[0]);
@@ -532,7 +513,6 @@ function bind(){
         el('over').checked = isOver; el('ko').checked = !isOver;
       }
       if (['ink1','ink2'].includes(n.id)) el('pal').value = 0;
-      limitImperfections();
   sync();
       if (n.id === 'proc'){
         const p = PROCS[+n.value];
@@ -561,7 +541,7 @@ function bind(){
     el('sha1').value=-1; el('hil1').value=-1; el('sha2').value=-1; el('hil2').value=-1;
     el('proc').value=2; el('cell').value=64; el('con').value=24; el('gam').value=29;
     el('reg').value=0; el('den').value=0; el('gra').value=0; el('dry').value=0;
-    el('ko').checked=true; el('over').checked=false; el('order').checked=false;
+    el('ko').checked=true; el('over').checked=false; el('order').checked=false; el('front').checked=true;
     el('two').checked=true; el('one').checked=false;
     el('kamt').value=100;
     document.querySelectorAll('input[type=range]').forEach(r=>{
@@ -648,7 +628,8 @@ function saveBlob(blob, ext){
 
 
 // ---------------------------------------------------------------- source
-// The press works on two arrays: a density plate and a silhouette. The bust
+// The press works on two arrays: a density plate and a silhouette. The
+// built-in default
 // arrives as two traced masks; an uploaded picture has to be turned into the
 // same pair. Transparency gives both at once, which is why a cutout PNG is
 // the good case.
@@ -798,7 +779,7 @@ function dropSpecks(m){
 
 // turn the held picture into the two plates, at the current Ink from / Cutout
 function rebuild(){
-  if (!SOURCE) return;
+  if (!SOURCE){ defaultPlates(); return; }
   const d = SOURCE.data, n = N*N, cutout = SOURCE.cutout;
   const fromLight = val('flip') === 1;
   const alpha = new Float32Array(n), ink = new Float32Array(n);
@@ -843,7 +824,9 @@ function rebuild(){
   for (let i = 0; i < n; i++) body[i] = mask[i];
 
   el('rowCut').classList.toggle('off', cutout);
-  setPlates(blue, body, (cutout ? 'cutout ' : 'no transparency ') + SOURCE.w + '×' + SOURCE.h);
+  setPlates(blue, body, (cutout
+    ? 'from the see-through edges'
+    : 'guessed from the dark parts, set it with Cutout') + ' · ' + SOURCE.w + '×' + SOURCE.h);
 }
 
 // Loads are async, so a slow one must not land on top of a later pick. Each
@@ -886,13 +869,27 @@ function idb(fn){
 function keep(blob){ idb(db => db.transaction('src','readwrite').objectStore('src').put(blob,'img')); }
 function forget(){ idb(db => db.transaction('src','readwrite').objectStore('src').delete('img')); }
 
+// The default image arrives already traced, so Ink from cannot re-read a picture. It
+// can still turn the density over inside the silhouette, which is the same
+// thing the switch does to an upload.
+function defaultPlates(){
+  if (!DEFAULT_PLATES.blue) return;
+  const src = DEFAULT_PLATES.blue, body = DEFAULT_PLATES.body;
+  let blue = src;
+  if (val('flip') === 1){
+    blue = new Float32Array(src.length);
+    for (let i = 0; i < src.length; i++) blue[i] = (1 - src[i]) * body[i];
+  }
+  setPlates(blue, body, 'built in · 700×700');
+}
+
 function useDefault(){
-  el('filename').textContent = 'Choose a picture';
+  el('filename').textContent = 'Choose a picture, or drop one';
   loadSeq++;                      // anything still decoding loses its ticket
   picked = true;                  // and the saved file must not come back
   SOURCE = null;
   el('rowCut').classList.add('off');
-  if (DEFAULT_PLATES.blue) setPlates(DEFAULT_PLATES.blue, DEFAULT_PLATES.body, 'bust 700×700');
+  defaultPlates();
 }
 
 for (const k of ['blue','body']){
@@ -906,7 +903,7 @@ for (const k of ['blue','body']){
     for (let i = 0; i < N*N; i++) a[i] = d[i*4]/255;   // the mask is greyscale
     DEFAULT_PLATES[k] = a;
     if (DEFAULT_PLATES.blue && DEFAULT_PLATES.body){
-      const claimed = picked;   // did anything land while the bust was loading
+      const claimed = picked;   // did anything land while the default was loading
       useDefault();
       picked = claimed;
       idb(db => {
@@ -920,15 +917,33 @@ for (const k of ['blue','body']){
   im.src = SRC[k];
 }
 
-el('file').onchange = e => {
-  const f = e.target.files && e.target.files[0];
+function takeFile(f){
   if (!f) return;
   picked = true;
   if (!/^image\//.test(f.type)){ note('that is not an image'); return; }
   if (f.size > 40e6){ note('too big, keep it under 40 MB'); return; }
   keep(f);
   useBlob(f, f.name);
-};
+}
+
+el('file').onchange = e => takeFile(e.target.files && e.target.files[0]);
+
+// drop a picture anywhere on the page. The browser opens a dropped file in the
+// tab unless every dragover is cancelled, so both handlers sit on the window.
+addEventListener('dragover', e => {
+  if (!e.dataTransfer.types.includes('Files')) return;
+  e.preventDefault();
+  document.body.classList.add('dropping');
+});
+addEventListener('dragleave', e => {
+  if (e.relatedTarget === null) document.body.classList.remove('dropping');
+});
+addEventListener('drop', e => {
+  if (!e.dataTransfer.types.includes('Files')) return;
+  e.preventDefault();
+  document.body.classList.remove('dropping');
+  takeFile(e.dataTransfer.files[0]);
+});
 
 
 // ---------------------------------------------------------------- random
@@ -975,7 +990,7 @@ function randomise(){
   const sgn = () => chance(0.5) ? 1 : -1;
   el('offx').value = sgn() * between(40, 200);
   el('offy').value = sgn() * between(10, 90);
-  el('order').checked = chance(0.3);
+  el('order').checked = chance(0.3); el('front').checked = !el('order').checked;
   el('kamt').value = chance(0.7) ? 100 : between(30, 95);
 
   // each process carries its own screen, contrast and gamma. Take those, then
@@ -987,11 +1002,8 @@ function randomise(){
   el('con').value  = jog(PROCS[pi].contrast, 8);
   el('gam').value  = jog(PROCS[pi].gamma, 7);
 
-  // no ceiling on these: any number of them, anywhere on the travel. The
-  // counter still reports when a roll goes past what the work calls for,
-  // which is the counter's job, not a reason to hold the dice back.
-  el('work').value = chance(0.35) ? 1 : 0;
-  IMPS.forEach(id => {
+  // no ceiling on these: any number of them, anywhere on the travel
+  ['reg','den','gra','dry'].forEach(id => {
     el(id).value = between(+el(id).min, +el(id).max);
   });
 
@@ -1000,7 +1012,6 @@ function randomise(){
     if (o) o.textContent = r.value;
   });
   sync();
-  limitImperfections();
   render();
 }
 

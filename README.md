@@ -9,9 +9,11 @@ Live: https://human-eyes-press-room.netlify.app
 
 ## Controls
 
-- **Source** your own picture (PNG with transparent background works best)
-- **Background** background colour (including transparent)
-- **Palette** ink colour, with ten ready-made palettes or pick your own combo.
+- **Source** your own picture, dropped anywhere on the page or picked with
+  the button (PNG with transparent background works best)
+- **Background** background colour. For a transparent one, tick Transparent
+  next to PNG.
+- **Palette** ink colour, with ten ready-made presets or pick your own combo.
 - **Front face** ink, strength, shadow ink, highlight ink.
 - **Back face** as above, x and y position
 - **Reproduction** process, screen, contrast, gamma, knockout or overprint,
