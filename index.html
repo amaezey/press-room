@@ -920,6 +920,7 @@ for (const k of ['blue','body']){
       });
     }
   };
+  im.onerror = () => note('Could not load the default picture');
   im.src = SRC[k];
 }
 
