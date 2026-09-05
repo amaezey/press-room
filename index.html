@@ -106,7 +106,7 @@ button.act:hover{border-color:var(--edge)}
     </fieldset>
 
     <fieldset><legend>Palette</legend>
-      <div class="row"><label>Approved</label>
+      <div class="row"><label>Preset</label>
         <select id="pal"><option value="0" selected>Custom</option><option value="1">Cobalt</option><option value="2">Terracotta</option><option value="3">Signal Red</option><option value="4">Aubergine</option><option value="5">Charcoal + Signal Red</option><option value="6">Cobalt + Terracotta</option><option value="7">Ultramarine + Safety Orange</option><option value="8">Botanical Green + Oxblood</option><option value="9">Cyan + Brick Red</option><option value="10">Mint Green + Warm Charcoal</option></select><output></output></div>
       <div class="row"><label>Mode</label>
         <span id="mode" style="font:400 13px/18px var(--f-sans)"></span><output></output></div>
@@ -528,7 +528,8 @@ function bind(){
         const names = PAL[val('pal')][2];
         el('ink1').value = inkIndex(names[0]);
         el('ink2').value = inkIndex(names.length > 1 ? names[1] : names[0]);
-        if (PAL[val('pal')][1] === 'overprint duotone') el('over').checked = true;
+        const isOver = PAL[val('pal')][1] === 'overprint duotone';
+        el('over').checked = isOver; el('ko').checked = !isOver;
       }
       if (['ink1','ink2'].includes(n.id)) el('pal').value = 0;
       limitImperfections();

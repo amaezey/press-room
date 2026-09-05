@@ -525,7 +525,7 @@ button.act:hover{{border-color:var(--edge)}}
     </fieldset>
 
     <fieldset><legend>Palette</legend>
-      <div class="row"><label>Approved</label>
+      <div class="row"><label>Preset</label>
         <select id="pal">{opts(PALETTES)}</select><output></output></div>
       <div class="row"><label>Mode</label>
         <span id="mode" style="font:400 13px/18px var(--f-sans)"></span><output></output></div>
@@ -947,7 +947,8 @@ function bind(){{
         const names = PAL[val('pal')][2];
         el('ink1').value = inkIndex(names[0]);
         el('ink2').value = inkIndex(names.length > 1 ? names[1] : names[0]);
-        if (PAL[val('pal')][1] === 'overprint duotone') el('over').checked = true;
+        const isOver = PAL[val('pal')][1] === 'overprint duotone';
+        el('over').checked = isOver; el('ko').checked = !isOver;
       }}
       if (['ink1','ink2'].includes(n.id)) el('pal').value = 0;
       limitImperfections();
