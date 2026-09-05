@@ -25,5 +25,5 @@ Live: https://human-eyes-press-room.netlify.app
 
     python3 -m http.server 8777
 
-`index.html` is the whole app. `mask-blue.png` and `mask-body.png` are the two
-plates for the default image. Netlify serves the repository root.
+`index.html` is the whole app, default image included, so it also opens
+straight from disk. Netlify serves the repository root.
