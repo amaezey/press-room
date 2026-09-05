@@ -37,9 +37,13 @@ align-items:flex-start;gap:10px;padding:12px 16px}
 border:1px solid var(--line);display:block}
 .acts{flex:none;display:flex;gap:8px}
 @media(max-width:820px){
-  body{overflow:auto} .wrap{flex-direction:column-reverse}
-  .panel{width:100%;border-right:0;border-top:1px solid var(--edge)}
+  html,body{height:auto} body{overflow:visible}
+  .wrap{flex-direction:column-reverse} .stage,.panel{flex:none}
+  .stage{position:sticky;top:0;z-index:1;background:var(--sheet);
+  border-bottom:1px solid var(--edge)}
+  .panel{width:100%;overflow:visible;border-right:0}
   #out{width:100%;height:auto;flex:none}
+  .acts{flex-wrap:wrap}
 }
 
 fieldset{border:0;border-bottom:1px solid var(--line);margin:0;padding:0 0 14px}
@@ -120,8 +124,12 @@ button.act:hover{border-color:var(--edge)}
         <input type="range" id="str1" min="0" max="130" value="100"><output>100</output></div>
       <div class="row"><label>Shadows</label>
         <select id="sha1"><option value="-1">Same as ink</option><option value="0">Cobalt</option><option value="1">Royal Blue</option><option value="2">Ultramarine</option><option value="3">Electric Blue</option><option value="4">Slate Blue</option><option value="5">Powder Blue</option><option value="6">Cyan</option><option value="7">Botanical Green</option><option value="8">Mint Green</option><option value="9">Terracotta</option><option value="10">Safety Orange</option><option value="11">Tangerine</option><option value="12">Signal Red</option><option value="13">Brick Red</option><option value="14">Oxblood</option><option value="15">Aubergine</option><option value="16">Charcoal</option><option value="17">Warm Charcoal</option><option value="18">Carbon</option></select><output></output></div>
+      <div class="row" id="rowShs1"><label>Shadow mix</label>
+        <input type="range" id="shs1" min="0" max="100" value="60"><output>60</output></div>
       <div class="row"><label>Highlights</label>
         <select id="hil1"><option value="-1">Same as ink</option><option value="0">Cobalt</option><option value="1">Royal Blue</option><option value="2">Ultramarine</option><option value="3">Electric Blue</option><option value="4">Slate Blue</option><option value="5">Powder Blue</option><option value="6">Cyan</option><option value="7">Botanical Green</option><option value="8">Mint Green</option><option value="9">Terracotta</option><option value="10">Safety Orange</option><option value="11">Tangerine</option><option value="12">Signal Red</option><option value="13">Brick Red</option><option value="14">Oxblood</option><option value="15">Aubergine</option><option value="16">Charcoal</option><option value="17">Warm Charcoal</option><option value="18">Carbon</option></select><output></output></div>
+      <div class="row" id="rowHls1"><label>Highlight mix</label>
+        <input type="range" id="hls1" min="0" max="100" value="60"><output>60</output></div>
     </fieldset>
 
     <fieldset><legend>Back face</legend>
@@ -140,8 +148,12 @@ button.act:hover{border-color:var(--edge)}
         <input type="range" id="offy" min="-300" max="300" value="25"><output>25</output></div>
       <div class="row"><label>Shadows</label>
         <select id="sha2"><option value="-1">Same as ink</option><option value="0">Cobalt</option><option value="1">Royal Blue</option><option value="2">Ultramarine</option><option value="3">Electric Blue</option><option value="4">Slate Blue</option><option value="5">Powder Blue</option><option value="6">Cyan</option><option value="7">Botanical Green</option><option value="8">Mint Green</option><option value="9">Terracotta</option><option value="10">Safety Orange</option><option value="11">Tangerine</option><option value="12">Signal Red</option><option value="13">Brick Red</option><option value="14">Oxblood</option><option value="15">Aubergine</option><option value="16">Charcoal</option><option value="17">Warm Charcoal</option><option value="18">Carbon</option></select><output></output></div>
+      <div class="row" id="rowShs2"><label>Shadow mix</label>
+        <input type="range" id="shs2" min="0" max="100" value="60"><output>60</output></div>
       <div class="row"><label>Highlights</label>
         <select id="hil2"><option value="-1">Same as ink</option><option value="0">Cobalt</option><option value="1">Royal Blue</option><option value="2">Ultramarine</option><option value="3">Electric Blue</option><option value="4">Slate Blue</option><option value="5">Powder Blue</option><option value="6">Cyan</option><option value="7">Botanical Green</option><option value="8">Mint Green</option><option value="9">Terracotta</option><option value="10">Safety Orange</option><option value="11">Tangerine</option><option value="12">Signal Red</option><option value="13">Brick Red</option><option value="14">Oxblood</option><option value="15">Aubergine</option><option value="16">Charcoal</option><option value="17">Warm Charcoal</option><option value="18">Carbon</option></select><output></output></div>
+      <div class="row" id="rowHls2"><label>Highlight mix</label>
+        <input type="range" id="hls2" min="0" max="100" value="60"><output>60</output></div>
     </fieldset>
 
     <fieldset><legend>Reproduction</legend>
@@ -343,10 +355,16 @@ function screenPlate(c, d, colFn, proc, cell, dryAmt){
   return img;
 }
 
-function colourFn(inkHex, shaHex, hilHex, paperRGB){
+function mix(a, b, t){
+  return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+}
+
+// the band inks are mixed once, not per pixel: at 0 the band keeps the main
+// ink, at 100 it is the band ink outright, which is what it used to do always
+function colourFn(inkHex, shaHex, hilHex, paperRGB, shaAmt, hilAmt){
   const ink = hex2rgb(inkHex);
-  const sha = shaHex? hex2rgb(shaHex) : null;
-  const hil = hilHex? hex2rgb(hilHex) : null;
+  const sha = shaHex? mix(ink, hex2rgb(shaHex), shaAmt) : null;
+  const hil = hilHex? mix(ink, hex2rgb(hilHex), hilAmt) : null;
   return (v) => {
     // v is density: 1 is the shadow, near 0 is the highlight
     let a = ink;
@@ -384,10 +402,12 @@ function render(){
 
   const c1 = colourFn(INKS[val('ink1')].hex,
     val('sha1')>=0? INKS[val('sha1')].hex : null,
-    val('hil1')>=0? INKS[val('hil1')].hex : null, paper);
+    val('hil1')>=0? INKS[val('hil1')].hex : null, paper,
+    val('shs1')/100, val('hls1')/100);
   const c2 = colourFn(INKS[val('ink2')].hex,
     val('sha2')>=0? INKS[val('sha2')].hex : null,
-    val('hil2')>=0? INKS[val('hil2')].hex : null, paper);
+    val('hil2')>=0? INKS[val('hil2')].hex : null, paper,
+    val('shs2')/100, val('hls2')/100);
 
   const two = el('two').checked;
   const over = el('over').checked, backOnTop = two && el('order').checked;
@@ -470,6 +490,14 @@ function sync(){
   const live = p.screen !== 'none';
   el('cell').closest('.row').classList.toggle('off', !live);
   el('cell').disabled = !live;
+  for (const f of ['1','2']){
+    for (const [sel, row, sld] of [['sha'+f,'rowShs'+f,'shs'+f],
+                                   ['hil'+f,'rowHls'+f,'hls'+f]]){
+      const live = val(sel) >= 0 && (f === '1' || two);
+      el(row).classList.toggle('off', !live);
+      el(sld).disabled = !live;
+    }
+  }
   const ko = el('ko').checked && two;
   el('kamt').closest('.row').classList.toggle('off', !ko);
   el('kamt').disabled = !ko;
@@ -540,6 +568,7 @@ function bind(){
     el('str1').value=100; el('str2').value=100;
     el('offx').value=138; el('offy').value=25;
     el('sha1').value=-1; el('hil1').value=-1; el('sha2').value=-1; el('hil2').value=-1;
+    el('shs1').value=60; el('hls1').value=60; el('shs2').value=60; el('hls2').value=60;
     el('proc').value=2; el('cell').value=64; el('con').value=24; el('gam').value=29;
     el('reg').value=0; el('den').value=0; el('gra').value=0; el('dry').value=0;
     el('ko').checked=true; el('over').checked=false; el('order').checked=false; el('front').checked=true;
@@ -982,6 +1011,7 @@ function randomise(){
   el('hil1').value = chance(0.20) ? anyInk() : -1;
   el('sha2').value = chance(0.25) ? anyInk() : -1;
   el('hil2').value = chance(0.20) ? anyInk() : -1;
+  for (const id of ['shs1','hls1','shs2','hls2']) el(id).value = between(35, 100);
 
   // the offset is what makes the back face a second impression rather than a
   // copy, so keep it clear of zero and inside the sheet
