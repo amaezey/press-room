@@ -824,9 +824,7 @@ function rebuild(){
   for (let i = 0; i < n; i++) body[i] = mask[i];
 
   el('rowCut').classList.toggle('off', cutout);
-  setPlates(blue, body, (cutout
-    ? 'from the see-through edges'
-    : 'guessed from the dark parts, set it with Cutout') + ' · ' + SOURCE.w + '×' + SOURCE.h);
+  setPlates(blue, body, (cutout ? 'Transparency' : 'Cutout') + ' · ' + SOURCE.w + '×' + SOURCE.h);
 }
 
 // Loads are async, so a slow one must not land on top of a later pick. Each
@@ -840,7 +838,7 @@ function useBlob(blob, name, restored){
     if (seq !== loadSeq) return;
     // a saved file that will not decode would fail again on every reload
     if (restored){ forget(); useDefault(); return; }
-    note('could not read that image');
+    note('Unreadable file');
   };
   im.onload = () => {
     URL.revokeObjectURL(url);
@@ -880,7 +878,7 @@ function defaultPlates(){
     blue = new Float32Array(src.length);
     for (let i = 0; i < src.length; i++) blue[i] = (1 - src[i]) * body[i];
   }
-  setPlates(blue, body, 'built in · 700×700');
+  setPlates(blue, body, 'Built in · 700×700');
 }
 
 function useDefault(){
@@ -920,8 +918,8 @@ for (const k of ['blue','body']){
 function takeFile(f){
   if (!f) return;
   picked = true;
-  if (!/^image\//.test(f.type)){ note('that is not an image'); return; }
-  if (f.size > 40e6){ note('too big, keep it under 40 MB'); return; }
+  if (!/^image\//.test(f.type)){ note('Not an image'); return; }
+  if (f.size > 40e6){ note('Over 40 MB'); return; }
   keep(f);
   useBlob(f, f.name);
 }
