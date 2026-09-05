@@ -315,7 +315,7 @@ function defaultPlates(){
 }
 
 function useDefault(){
-  el('filename').textContent = 'Choose a picture, or drop one';
+  el('filename').textContent = 'Choose or drop';
   loadSeq++;                      // anything still decoding loses its ticket
   picked = true;                  // and the saved file must not come back
   SOURCE = null;
@@ -542,7 +542,7 @@ button.act:hover{{border-color:var(--edge)}}
     <fieldset><legend>Source</legend>
       <div class="row"><label>Image</label>
         <label class="file"><input type="file" id="file" accept="image/*">
-          <span id="filename">Choose a picture, or drop one</span></label><output></output></div>
+          <span id="filename">Choose or drop</span></label><output></output></div>
       <div class="row"><label>Ink from</label>
         <select id="flip"><option value="0">Dark areas</option>
         <option value="1">Light areas</option></select><output></output></div>
@@ -568,9 +568,9 @@ button.act:hover{{border-color:var(--edge)}}
       <div class="row"><label>Strength</label>
         <input type="range" id="str1" min="0" max="130" value="100"><output>100</output></div>
       <div class="row"><label>Shadows</label>
-        <select id="sha1"><option value="-1">one ink</option>{opts(INKS, -1)}</select><output></output></div>
+        <select id="sha1"><option value="-1">Same as ink</option>{opts(INKS, -1)}</select><output></output></div>
       <div class="row"><label>Highlights</label>
-        <select id="hil1"><option value="-1">paper</option>{opts(INKS, -1)}</select><output></output></div>
+        <select id="hil1"><option value="-1">Same as ink</option>{opts(INKS, -1)}</select><output></output></div>
     </fieldset>
 
     <fieldset><legend>Back face</legend>
@@ -588,9 +588,9 @@ button.act:hover{{border-color:var(--edge)}}
       <div class="row"><label>Down</label>
         <input type="range" id="offy" min="-300" max="300" value="25"><output>25</output></div>
       <div class="row"><label>Shadows</label>
-        <select id="sha2"><option value="-1">one ink</option>{opts(INKS, -1)}</select><output></output></div>
+        <select id="sha2"><option value="-1">Same as ink</option>{opts(INKS, -1)}</select><output></output></div>
       <div class="row"><label>Highlights</label>
-        <select id="hil2"><option value="-1">paper</option>{opts(INKS, -1)}</select><output></output></div>
+        <select id="hil2"><option value="-1">Same as ink</option>{opts(INKS, -1)}</select><output></output></div>
     </fieldset>
 
     <fieldset><legend>Reproduction</legend>
