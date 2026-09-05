@@ -9,17 +9,11 @@ Live: https://human-eyes-press-room.netlify.app
 
 ## Controls
 
-- **Source** your own picture. A transparent PNG is the good case: the
-  transparency gives the ink and the edge of the shape at once. Fitted
-  inside the square, never cropped, clear margins trimmed. Pinholes filled
-  and specks binned, so a rough cutout does not print as dirt. **Ink from**
-  picks which end of the scale prints, guessed on load. **Cutout** only
-  wakes up for a picture with no transparency, where the shape has to be
-  carved out of the density. The last upload survives a reload; Reset
-  brings the bust back.
-- **Paper** background colour, plus ten ready-made palettes.
+- **Source** your own picture (PNG with transparent background works best)
+- **Background** background colour (including transparent)
+- **Palette** ink colour, with ten ready-made palettes or pick your own combo.
 - **Front face** ink, strength, shadow ink, highlight ink.
-- **Back face** the same four, plus across and down.
+- **Back face** as above, x and y position
 - **Reproduction** process, screen, contrast, gamma, knockout or overprint,
   and which face sits on top.
 - **Imperfections** registration, ink density, grain, dry edge.
