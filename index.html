@@ -91,7 +91,8 @@ button.act:hover{border-color:var(--edge)}
   <div class="panel">
     <fieldset><legend>Source</legend>
       <div class="row"><label>Image</label>
-        <label class="file"><input type="file" id="file" accept="image/*">
+        <label class="file"><input type="file" id="file"
+            accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.avif,.bmp,.svg">
           <span id="filename">Choose or drop</span></label><output></output></div>
       <div class="row"><label>Ink from</label>
         <select id="flip"><option value="0">Dark areas</option>
@@ -918,7 +919,6 @@ for (const k of ['blue','body']){
 function takeFile(f){
   if (!f) return;
   picked = true;
-  if (!/^image\//.test(f.type)){ note('Not an image'); return; }
   if (f.size > 40e6){ note('Over 40 MB'); return; }
   keep(f);
   useBlob(f, f.name);
